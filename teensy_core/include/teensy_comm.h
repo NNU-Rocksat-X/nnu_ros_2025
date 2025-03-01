@@ -12,6 +12,7 @@
 #define TEENSY_COMM_H
 
 #include <stdint.h>
+#include <cstddef>
 
 #define NUM_JOINTS 6
 #define RAD_PER_ENC_STEP 1200 // TODO: someone update this
@@ -30,6 +31,8 @@ typedef struct _teensy_header_t
 {
     uint16_t header;
     uint16_t seq;
+    uint16_t len;
+    uint16_t type;
 } teensy_header_t;
 
 typedef struct _teensy_command_t

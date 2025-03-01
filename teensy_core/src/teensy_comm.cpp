@@ -33,7 +33,7 @@ double enc_steps_to_rad (uint32_t enc_steps, uint16_t gear_ratio)
  */
 uint32_t rad_to_enc_steps (double rad, uint16_t gear_ratio)
 {
-    return rad * gear_ratio * 
+    return rad * gear_ratio * ENC_STEP_PER_RAD;
 }
 
 /**
@@ -45,7 +45,7 @@ uint32_t rad_to_enc_steps (double rad, uint16_t gear_ratio)
  * 
  * @return - unsigned 16 bit crc calculated on the entire payload (minus crc obv)
  */
-uint16_t crc16_ccitt (const uint8_t *data, size_t length) 
+uint16_t crc16_ccitt (const uint8_t *data, size_t length)
 {
     uint16_t crc = CRC_INIT;
 

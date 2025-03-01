@@ -23,6 +23,10 @@ include_directories(
   ${catkin_INCLUDE_DIRS}
 )
 
+add_library(teensy_core 
+    src/teensy_comm.cpp  # Add this line
+)
+
 add_executable(teensy_interface src/teensy_interface.cpp)
-target_link_libraries(teensy_interface ${catkin_LIBRARIES})
+target_link_libraries(teensy_interface ${catkin_LIBRARIES} teensy_core)
 add_dependencies(teensy_interface ${catkin_EXPORTED_TARGETS})
