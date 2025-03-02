@@ -7,6 +7,7 @@
  * @author Febuary 27, 2025
  * 
  * TODO: test the serial communications
+ * TODO: Add service for updating arm position
  * 
  ******************************************************************************/
 
@@ -25,9 +26,10 @@
 
 // TODO: if you want to use the pins to communicate, you have to turn off the 
 // serial console and you have to turn on UART0
-#define TEENSY_SER_PORT "/dev/ttyS0" // TODO: change this to THS1 or whatever
+#define TEENSY_SER_PORT "/dev/ttyAMA1" // TODO: change this to THS1 or whatever
 #define TEENSY_BAUD_RATE 115200
-#define LOOP_RATE 50
+#define LOOP_RATE 20
+#define PRINT_DATA 1 // 0 - no print, 1 - print data
 
 static teensy_command_t tnsy_cmd = {0};
 static teensy_status_t tnsy_sts = {0};
@@ -84,6 +86,7 @@ int parse_message (const uint8_t* buf, int size)
     }
     else
     {
+        ROS_WARN("did not pass header");
         return 1;
     }
 
@@ -94,6 +97,49 @@ int parse_message (const uint8_t* buf, int size)
 // TODO: create daedalus core 
 // TODO: Come up with a way that the folks at NNU can test it
 
+int init_serial (const char* port) 
+{
+    int fd = open(port, O_RDWR | O_NOCTTY | O_SYNC);
+    if (fd == -1) {
+        perror("Error opening serial port");
+        return -1;
+    }
+
+    struct termios options;
+    tcgetattr(fd, &options);
+
+    cfmakeraw(&options);  // Set raw mode (critical fix!)
+
+    cfsetispeed(&options, B115200);
+    cfsetospeed(&options, B115200);
+
+    options.c_cflag |= (CLOCAL | CREAD);  // Enable receiver, ignore modem control lines
+
+    options.c_cc[VMIN]  = 26;  // Read only when 26 bytes available
+    options.c_cc[VTIME] = 10;  // Timeout = 1 second
+
+    tcsetattr(fd, TCSANOW, &options);
+    tcflush(fd, TCIFLUSH);
+
+    return fd;
+}
+
+void print_info (void)
+{
+    ROS_INFO("------------ Teensy Status ------------");
+    ROS_INFO("%04x %d %d %d",
+             tnsy_sts.hdr.header, 
+             tnsy_sts.hdr.seq, 
+             tnsy_sts.hdr.len, 
+             tnsy_sts.hdr.type);
+    ROS_INFO("%d %d %d %d %d %d",
+             tnsy_sts.encoder[0],
+             tnsy_sts.encoder[1],
+             tnsy_sts.encoder[2],
+             tnsy_sts.encoder[3],
+             tnsy_sts.encoder[4],
+             tnsy_sts.encoder[5]);
+}
 
 /**
  * M A I N
@@ -102,8 +148,8 @@ int parse_message (const uint8_t* buf, int size)
 int main (int argc, char** argv)
 {
     int ser_fd = 0;
-    uint8_t* in_buf = (uint8_t*)malloc(1024); // TODO: Is this valid?
-    uint8_t* out_buf = (uint8_t*)malloc(1024);
+    uint8_t in_buf[26]; // TODO: Is this valid?
+    uint8_t out_buf[26];
     int bytes = 0;
 
     ros::init(argc, argv, "teensy_interface");
@@ -115,50 +161,26 @@ int main (int argc, char** argv)
                                          &position_callback);
     ROS_INFO("Created joint_position_cmd subscriber");
 
-    ser_fd = open(TEENSY_SER_PORT, O_RDWR | O_NOCTTY | O_NDELAY);
-    if (ser_fd == -1) 
-    {
-        ROS_ERROR("Teensy File descriptor is invalid.");
-    }
-
-    struct termios tty;
-    if (tcgetattr(ser_fd, &tty) != 0) {
-        ROS_ERROR("Error getting terminal attributes.");
-        close(ser_fd);
-        return -1;
-    }
-
-    // Set baud rate to 115200
-    cfsetispeed(&tty, B115200);
-    cfsetospeed(&tty, B115200);
-
-    // Configure 8N1 (8 data bits, no parity, 1 stop bit)
-    tty.c_cflag &= ~PARENB;
-    tty.c_cflag &= ~CSTOPB;
-    tty.c_cflag &= ~CSIZE;
-    tty.c_cflag |= CS8;
-    tty.c_cflag |= CREAD | CLOCAL;
-
-    // Disable flow control
-    tty.c_iflag &= ~(IXON | IXOFF | IXANY);
-    
-    // Apply settings
-    if (tcsetattr(ser_fd, TCSANOW, &tty) != 0) {
-        ROS_ERROR("Error setting the terminal attributes");
-        close(ser_fd);
-        return -1;
-    }
+    ser_fd = init_serial(TEENSY_SER_PORT);
 
     ros::Rate loop_rate(LOOP_RATE);
     while(ros::ok())
     {
+        bytes = read(ser_fd, &in_buf, sizeof(tnsy_sts));
+        ROS_INFO("read in %d bytes as %d", bytes, in_buf[0]);
 
-        bytes = read(ser_fd, in_buf, sizeof(teensy_status_t));
-
-        if (bytes > 0)
+        if (bytes >= 0)
         {
-            parse_message(in_buf, bytes);
+            // ROS_INFO("read in %d bytes", bytes);
+            if (parse_message(in_buf, bytes) == 0)
+            {
+                print_info();
+            }
         }
+
+        // TODO: set up CRC
+        memcpy(out_buf, &tnsy_cmd, sizeof(tnsy_cmd));
+        tnsy_cmd.crc = crc16_ccitt(out_buf, sizeof(tnsy_cmd) - 2); // crc is the 2 bytes
 
         memcpy(out_buf, &tnsy_cmd, sizeof(tnsy_cmd));
         write(ser_fd, out_buf, sizeof(tnsy_cmd));

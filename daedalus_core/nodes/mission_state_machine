@@ -1,0 +1,32 @@
+#! /usr/bin/python3
+
+import rospy
+import smach
+import smach_ros
+
+from daedalus_core.pcs_move_states import *
+from daedalus_core.pcs_states import *
+
+class Mission_SM:
+    def __init__(self):
+        self.sm = smach.StateMachine(outcomes=["Mission_Success", "Mission_Fail"])
+
+        self.mission_sm()
+        
+    def mission_sm(self):
+        with self.sm:
+
+            smach.StateMachine.add('Init_Arm_sync', ARM_Sync("init", timeout=240),
+                transitions={'Ready': 'Wait_for_TE_delay',
+                             'Timeout': 'Finish_Fail'}) 
+
+            smach.StateMachine.add('')
+    def run(self):
+        outcome = self.sm.execute()
+
+
+if __name__ == "__main__":
+    rospy.init_node("mission_sm")
+    sm = Mission_SM()
+    print("Begin Run SM")
+    sm.run()
