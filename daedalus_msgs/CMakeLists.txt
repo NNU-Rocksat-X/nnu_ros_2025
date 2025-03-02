@@ -4,10 +4,6 @@ project(daedalus_msgs)
 find_package(catkin REQUIRED 
     COMPONENTS
         message_generation
-        std_msgs
-        geometry_msgs
-        genmsg
-        actionlib_msgs
 )
 
 add_message_files(
@@ -15,9 +11,10 @@ add_message_files(
     teensy_message.msg
 )
   
-# add_service_files(
-#     FILES
-# )
+add_service_files(
+    FILES
+    joint_pose_cmd.srv
+)
 
 
 generate_messages(

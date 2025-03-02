@@ -1,0 +1,7 @@
+<launch>
+    <group ns="daedalus">
+        <node pkg="teensy_core" name="move_manager" type="move_manager" output="screen"/>
+        <node pkg="teensy_core" name="teensy_interface" type="teensy_interface" output="screen"/>
+
+    </group>
+</launch>

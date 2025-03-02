@@ -6,7 +6,6 @@
  * @author Riley Mark 
  * @author Febuary 27, 2025
  * 
- * TODO: test the serial communications
  * TODO: Add service for updating arm position
  * 
  ******************************************************************************/
@@ -36,7 +35,10 @@ static teensy_status_t tnsy_sts = {0};
 
 uint16_t gear_ratio[NUM_JOINTS] = {1, 2, 3, 4, 5, 6};
 
-
+/**
+ * Position callback - This callback function updates teensy command position
+ *                     setpoints. The Joint pose command service calls this.
+ */
 void position_callback(const daedalus_msgs::teensy_message::ConstPtr& msg)
 {
     double deg_sec = 0.0;
@@ -47,6 +49,12 @@ void position_callback(const daedalus_msgs::teensy_message::ConstPtr& msg)
     {
         tnsy_cmd.setpoint_position[ii] = msg->steps[ii];
     }
+
+    // this isnt a great place for this.. Generally callback should be kept 
+    // lean, but who is keeping track amirite
+    tnsy_cmd.hdr.header = 0x5555;
+    tnsy_cmd.hdr.seq++;
+    tnsy_cmd.hdr.len = sizeof(tnsy_cmd);
 
     ROS_INFO("Joint positions updated.");
 }
@@ -89,8 +97,6 @@ int parse_message (const uint8_t* buf, int size)
         ROS_WARN("did not pass header");
         return 1;
     }
-
-    return 0;
 }
 
 // TOOD: add message builder function to teensy comm
@@ -100,7 +106,8 @@ int parse_message (const uint8_t* buf, int size)
 int init_serial (const char* port) 
 {
     int fd = open(port, O_RDWR | O_NOCTTY | O_SYNC);
-    if (fd == -1) {
+    if (fd == -1) 
+    {
         perror("Error opening serial port");
         return -1;
     }
@@ -108,20 +115,29 @@ int init_serial (const char* port)
     struct termios options;
     tcgetattr(fd, &options);
 
-    cfmakeraw(&options);  // Set raw mode (critical fix!)
+    cfmakeraw(&options);  // Set raw mode
 
     cfsetispeed(&options, B115200);
     cfsetospeed(&options, B115200);
 
     options.c_cflag |= (CLOCAL | CREAD);  // Enable receiver, ignore modem control lines
 
-    options.c_cc[VMIN]  = 26;  // Read only when 26 bytes available
+    options.c_cc[VMIN]  = sizeof(tnsy_sts);  // Read only when 26 bytes available, tune this param
     options.c_cc[VTIME] = 10;  // Timeout = 1 second
 
     tcsetattr(fd, TCSANOW, &options);
     tcflush(fd, TCIFLUSH);
 
     return fd;
+}
+
+
+void generate_command_message ()
+{
+    tnsy_cmd.hdr.header = 0x5555;
+    tnsy_cmd.hdr.seq++;
+    tnsy_cmd.hdr.len = sizeof(tnsy_cmd);
+    tnsy_cmd.hdr.type = 1;
 }
 
 void print_info (void)
@@ -139,6 +155,28 @@ void print_info (void)
              tnsy_sts.encoder[3],
              tnsy_sts.encoder[4],
              tnsy_sts.encoder[5]);
+    ROS_INFO("%d %d %d",
+             tnsy_sts.debug_feild_0,
+             tnsy_sts.debug_feild_1,
+             tnsy_sts.crc);
+
+    ROS_INFO("------------ Teensy Command ------------");
+    ROS_INFO("%04x %d %d %d",
+            tnsy_cmd.hdr.header, 
+            tnsy_cmd.hdr.seq, 
+            tnsy_cmd.hdr.len, 
+            tnsy_cmd.hdr.type);
+    ROS_INFO("%d %d %d %d %d %d",
+            tnsy_cmd.setpoint_position[0],
+            tnsy_cmd.setpoint_position[1],
+            tnsy_cmd.setpoint_position[2],
+            tnsy_cmd.setpoint_position[3],
+            tnsy_cmd.setpoint_position[4],
+            tnsy_cmd.setpoint_position[5]);
+    ROS_INFO("%d %d",
+            tnsy_cmd.led_state,
+            tnsy_cmd.crc);
+    ROS_INFO("\n");
 }
 
 /**
@@ -178,7 +216,8 @@ int main (int argc, char** argv)
             }
         }
 
-        // TODO: set up CRC
+
+        generate_command_message();
         memcpy(out_buf, &tnsy_cmd, sizeof(tnsy_cmd));
         tnsy_cmd.crc = crc16_ccitt(out_buf, sizeof(tnsy_cmd) - 2); // crc is the 2 bytes
 
