@@ -1,4 +1,4 @@
-#! /usr/bin/python3
+#!/usr/bin/env python
 
 import rospy
 import smach
@@ -16,11 +16,10 @@ class Mission_SM:
     def mission_sm(self):
         with self.sm:
 
-            smach.StateMachine.add('Init_Arm_sync', ARM_Sync("init", timeout=240),
-                transitions={'Ready': 'Wait_for_TE_delay',
-                             'Timeout': 'Finish_Fail'}) 
+            smach.StateMachine.add('Unfold', unfold_sm,
+                transitions={'Success': 'Mission_Success',
+                             'Fail': 'Mission_Fail'}) 
 
-            smach.StateMachine.add('')
     def run(self):
         outcome = self.sm.execute()
 

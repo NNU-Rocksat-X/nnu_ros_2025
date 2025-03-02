@@ -1,8 +1,12 @@
-#! /usr/bin/python3
+#!/usr/bin/env python
 
 import rospy
 import smach
 import smach_ros
+
+from daedalus_core.pcs_states import *
+from daedalus_core.daedalus_services.services import *
+
 
 class Joint_Pose_State(smach.State):
     
@@ -33,48 +37,50 @@ class Joint_Pose_State(smach.State):
 
 
 # Folding and unfolding
-Unfold_SM = smach.StateMachine(outcomes=['Success', 'Fail'])
-NUM_FOLDING_STEPS = len(rospy.get_param('joints/folding'))
+unfold_sm = smach.StateMachine(outcomes=['Success', 'Fail'])
+NUM_FOLDING_STEPS = len(rospy.get_param('unfold'))
 
-with Unfold_SM:
+with unfold_sm:
     for i in range(0, NUM_FOLDING_STEPS):
         step_str = 'step_' + str(i)
         delay_str = 'delay_' + str(i)
 
         if i == NUM_FOLDING_STEPS - 1:
-            smach.StateMachine.add(step_str, Joint_Pose_State('folding/' + step_str, allowed_attempts=2),
+            print(i)
+            smach.StateMachine.add(step_str, Joint_Pose_State('unfold/' + step_str, allowed_attempts=2),
                     transitions={'Success': 'Success',
                                  'Fail': 'Fail'})
 
         else:
-            smach.StateMachine.add(step_str, Joint_Pose_State('folding/' + step_str, allowed_attempts=2),
+            rospy.loginfo(i)
+            smach.StateMachine.add(step_str, Joint_Pose_State('unfold/' + step_str, allowed_attempts=2),
                     transitions={'Success': delay_str,
                                  'Fail': 'Fail'})
             
             smach.StateMachine.add(delay_str, Wait_State(1),
-                    transitions={'Complete': 'step_' + str(i+1)})
+                                   transitions={'Complete': 'step_' + str(i + 1)})
 
 
 
-Fold_SM = smach.StateMachine(outcomes=['Success', 'Fail'])
-NUM_REFOLDING_STEPS = len(rospy.get_param('joints/refolding'))
+# Fold_SM = smach.StateMachine(outcomes=['Success', 'Fail'])
+# NUM_REFOLDING_STEPS = len(rospy.get_param('unfold'))
 
-print(NUM_REFOLDING_STEPS)
+# print(NUM_REFOLDING_STEPS)
 
-with Fold_SM:
-    for i in range(0, NUM_REFOLDING_STEPS):
-        step_str = 'step_' + str(i)
-        delay_str = 'delay_' + str(i)
+# with Fold_SM:
+#     for i in range(0, NUM_REFOLDING_STEPS):
+#         step_str = 'step_' + str(i)
+#         delay_str = 'delay_' + str(i)
 
-        if i == NUM_REFOLDING_STEPS - 1:
-            smach.StateMachine.add(step_str, Joint_Pose_State('refolding/' + step_str, allowed_attempts=2),
-                    transitions={'Success': 'Success',
-                                 'Fail': 'Fail'})
+#         if i == NUM_REFOLDING_STEPS - 1:
+#             smach.StateMachine.add(step_str, Joint_Pose_State('refolding/' + step_str, allowed_attempts=2),
+#                     transitions={'Success': 'Success',
+#                                  'Fail': 'Fail'})
 
-        else:
-            smach.StateMachine.add(step_str, Joint_Pose_State('refolding/' + step_str, allowed_attempts=2),
-                    transitions={'Success': delay_str,
-                                 'Fail': 'Fail'})
+#         else:
+#             smach.StateMachine.add(step_str, Joint_Pose_State('refolding/' + step_str, allowed_attempts=2),
+#                     transitions={'Success': delay_str,
+#                                  'Fail': 'Fail'})
             
-            smach.StateMachine.add(delay_str, Wait_State(1),
-                    transitions={'Complete': 'step_' + str(i+1)})
+#             smach.StateMachine.add(delay_str, Wait_State(1),
+#                     transitions={'Complete': 'step_' + str(i+1)})

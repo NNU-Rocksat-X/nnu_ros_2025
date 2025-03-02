@@ -1,6 +1,6 @@
 #! /usr/bin/python3
 
-import RPi.GPIO as GPIO
+# import RPi.GPIO as GPIO
 
 import rospy
 import smach
@@ -33,3 +33,18 @@ class Check_Inhibit(smach.State):
             return 'No_Inhibit'
         else:
             return 'Full_Inhibit'
+
+
+class Wait_State(smach.State):
+    """
+    Waits for the specified wait_time where wait_time is in seconds
+    """
+    
+    def __init__(self, wait_time):
+        smach.State.__init__(self, outcomes=['Complete'])
+        self.wait_time = wait_time
+
+    def execute(self, userdata):
+        rospy.sleep(self.wait_time)
+
+        return 'Complete'
