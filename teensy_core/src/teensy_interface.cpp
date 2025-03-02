@@ -27,7 +27,7 @@
 // serial console and you have to turn on UART0
 #define TEENSY_SER_PORT "/dev/ttyAMA1" // TODO: change this to THS1 or whatever
 #define TEENSY_BAUD_RATE 115200
-#define LOOP_RATE 20
+#define LOOP_RATE 50
 #define PRINT_DATA 1 // 0 - no print, 1 - print data
 
 static teensy_command_t tnsy_cmd = {0};
@@ -41,13 +41,14 @@ uint16_t gear_ratio[NUM_JOINTS] = {1, 2, 3, 4, 5, 6};
  */
 void position_callback(const daedalus_msgs::teensy_message::ConstPtr& msg)
 {
+    ROS_WARN("position Callback");
     double deg_sec = 0.0;
     double deg_ms = 0.0;
     int32_t step_ms = 0;
 
     for (int ii = 0; ii < NUM_JOINTS; ii++)
     {
-        tnsy_cmd.setpoint_position[ii] = msg->steps[ii];
+        tnsy_cmd.setpoint_position[ii] = (uint16_t)msg->steps[ii];
     }
 
     // this isnt a great place for this.. Generally callback should be kept 
@@ -76,13 +77,13 @@ int parse_message (const uint8_t* buf, int size)
     memcpy(&hdr_chk, buf, sizeof(hdr_chk));
     if (hdr_chk == 0x5555)
     {
-        ROS_INFO("beginning of message found");
+        // ROS_INFO("beginning of message found");
 
         calc_crc = crc16_ccitt(buf, size - 2);
         memcpy(&rec_crc, buf + size - 2, sizeof(rec_crc));
         if (calc_crc == rec_crc)
         {
-            ROS_INFO("Passed CRC.");
+            // ROS_INFO("Passed CRC.");
             memcpy(&tnsy_sts, buf, size - 2);
 
             return 0;
@@ -188,16 +189,16 @@ int main (int argc, char** argv)
     int ser_fd = 0;
     uint8_t in_buf[26]; // TODO: Is this valid?
     uint8_t out_buf[26];
-    int bytes = 0;
+    int bytes = -1;
 
     ros::init(argc, argv, "teensy_interface");
     ros::NodeHandle nh;
     ROS_INFO("Starting Teensy Interface");
 
-    ros::Subscriber sub_0 = nh.subscribe("joint_position_cmd",
-                                         2, 
+    ros::Subscriber sub_0 = nh.subscribe("update_teensy_cmd",
+                                         500, 
                                          &position_callback);
-    ROS_INFO("Created joint_position_cmd subscriber");
+    ROS_INFO("Created update_teensy_cmd subscriber");
 
     ser_fd = init_serial(TEENSY_SER_PORT);
 
@@ -205,7 +206,8 @@ int main (int argc, char** argv)
     while(ros::ok())
     {
         bytes = read(ser_fd, &in_buf, sizeof(tnsy_sts));
-        ROS_INFO("read in %d bytes as %d", bytes, in_buf[0]);
+        // ROS_INFO("read in %d bytes as %d", bytes, in_buf[0]);
+        // ROS_INFO("print");
 
         if (bytes >= 0)
         {
@@ -224,6 +226,7 @@ int main (int argc, char** argv)
         memcpy(out_buf, &tnsy_cmd, sizeof(tnsy_cmd));
         write(ser_fd, out_buf, sizeof(tnsy_cmd));
 
+        ros::spinOnce();
         loop_rate.sleep();
     }
 

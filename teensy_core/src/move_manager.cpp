@@ -14,7 +14,7 @@ MoveManager::MoveManager (ros::NodeHandle *nh)
     joint_pose_service = nh->advertiseService("joint_pose_cmd", 
                                             &MoveManager::joint_pose_cmd, this);
 
-    joint_position_cmd = nh->advertise<daedalus_msgs::teensy_message>("joint_position_cmd", 10);
+    joint_position_cmd = nh->advertise<daedalus_msgs::teensy_message>("update_teensy_cmd", 10, this);
 
     ROS_INFO("initialized the Move Manager");
 
@@ -47,12 +47,13 @@ bool MoveManager::joint_pose_cmd (daedalus_msgs::joint_pose_cmd::Request &req,
                 tnsy_msg.steps.push_back(joint_group_positions[kk]);
             }
     
+            ROS_INFO("publishing");
             joint_position_cmd.publish(tnsy_msg);
     
             ros::Duration(0.1).sleep();
     
-            bool completion_status = wait_until_complete(joint_group_positions);
-            res.done = completion_status;
+            // bool completion_status = wait_until_complete(joint_group_positions);
+            res.done = true;
             return true;
         }
         else 
@@ -121,7 +122,7 @@ int main (int argc, char** argv)
 {
     ros::init(argc, argv, "move_manager");
     ros::NodeHandle nh;
-    ros::AsyncSpinner spinner(2);
+    ros::AsyncSpinner spinner(3);
     spinner.start();
 
     MoveManager move_manager = MoveManager(&nh);

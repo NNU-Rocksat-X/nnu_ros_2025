@@ -1,0 +1,4 @@
+<launch>
+    <rosparam file="$(find daedalus_core)/config/arm_positions.yaml" command="load"/>
+
+</launch>
