@@ -1,5 +1,16 @@
 #! /usr/bin/python3
 
+#
+# PCS Move States
+#
+# @brief sub states for the mission state machine. This file contains all
+#        non-movement related state machines and helper functions. 
+#
+# @author Riley Mark 
+# @author Febuary 27, 2025
+# 
+#*******************************************************************************
+
 # import RPi.GPIO as GPIO
 
 import rospy
@@ -9,9 +20,9 @@ import smach_ros
 INHIBIT_PIN_0 = 12
 INHIBIT_PIN_1 = 13
 
-# TODO: remove the arm sync functionality
-
 # 
+# TODO: setup inhibits
+#
 class Check_Inhibit(smach.State):
 
     def __init__(self):
@@ -34,7 +45,8 @@ class Check_Inhibit(smach.State):
         else:
             return 'Full_Inhibit'
 
-
+#
+# 
 class Wait_State(smach.State):
     """
     Waits for the specified wait_time where wait_time is in seconds

@@ -1,4 +1,15 @@
-#!/usr/bin/env python
+#! /usr/bin/python
+
+#
+# Misison State Machine
+#
+# @brief This is the high level mission state machine. Dictates the mission 
+#        timeline. Links the sub-state machines in the right order. 
+#
+# @author Riley Mark 
+# @author Febuary 27, 2025
+# 
+#*******************************************************************************
 
 import rospy
 import smach
@@ -16,9 +27,18 @@ class Mission_SM:
     def mission_sm(self):
         with self.sm:
 
+            # TODO: add inhibits here
+
             smach.StateMachine.add('Unfold', unfold_sm,
-                transitions={'Success': 'Mission_Success',
-                             'Fail': 'Mission_Fail'}) 
+                                   transitions={'Success': 'Wait_1',
+                                                'Fail': 'Mission_Fail'}) 
+
+            smach.StateMachine.add('Wait_1', Wait_State(5),
+                                   transitions={'Complete': 'Fold'}) 
+
+            smach.StateMachine.add('Fold', fold_sm,
+                                   transitions={'Success': 'Mission_Success',
+                                                'Fail': 'Mission_Fail'}) 
 
     def run(self):
         outcome = self.sm.execute()

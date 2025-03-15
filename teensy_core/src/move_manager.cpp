@@ -1,4 +1,3 @@
-
 /**
  * Move manager
  * 
@@ -30,6 +29,7 @@ MoveManager::MoveManager (ros::NodeHandle *nh)
  * NOTE: This is a dangerous design because there is a scenario where multiple
  *       threads are attempting to read/write to the same point in memory thus
  *       causing the process to fail. 
+ * 
  * TODO: Add a mutex or something to lock the shared memory
  */
 void MoveManager::encoder_monitor (const daedalus_msgs::teensy_message::ConstPtr& msg)
@@ -40,8 +40,14 @@ void MoveManager::encoder_monitor (const daedalus_msgs::teensy_message::ConstPtr
     }
 }
 
+
 /**
+ * Joint Pose Command Service
  * 
+ * Is called by the mission state machine to send the arm to a pre-determined 
+ * pose.
+ * 
+ * TODO: dont return true until the movement is complete
  */
 bool MoveManager::joint_pose_cmd (daedalus_msgs::joint_pose_cmd::Request &req,
                                   daedalus_msgs::joint_pose_cmd::Response &res)
