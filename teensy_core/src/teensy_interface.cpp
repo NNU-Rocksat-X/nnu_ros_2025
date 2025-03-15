@@ -100,10 +100,21 @@ int parse_message (const uint8_t* buf, int size)
     }
 }
 
-// TOOD: add message builder function to teensy comm
-// TODO: create daedalus core 
-// TODO: Come up with a way that the folks at NNU can test it
 
+/**
+ * Initializes the serial port. 
+ * 
+ * Settings:
+ *  - baud 115200
+ *  - 8 data 1 stop bit (standard)
+ *  - ignore modem control lines
+ *  - read once 26 bytes are available (not standard but this will help debugging)
+ *  - timeout of 1 second
+ * 
+ * @param port - the serial port that the teensy is connected to (ex. /dev/ttyACM1)
+ * 
+ * @return - file descriptor
+ */
 int init_serial (const char* port) 
 {
     int fd = open(port, O_RDWR | O_NOCTTY | O_SYNC);
@@ -191,6 +202,8 @@ int main (int argc, char** argv)
     uint8_t out_buf[26];
     int bytes = -1;
 
+    daedalus_msgs::teensy_message encdr_vals;
+
     ros::init(argc, argv, "teensy_interface");
     ros::NodeHandle nh;
     ROS_INFO("Starting Teensy Interface");
@@ -199,6 +212,10 @@ int main (int argc, char** argv)
                                          500, 
                                          &position_callback);
     ROS_INFO("Created update_teensy_cmd subscriber");
+
+    ros::Publisher pub_0 = nh.advertise<daedalus_msgs::teensy_message>("encoder_values", 
+                                                                       10);
+    ROS_INFO("encoder_values publisher is created");
 
     ser_fd = init_serial(TEENSY_SER_PORT);
 
@@ -215,11 +232,20 @@ int main (int argc, char** argv)
             if (parse_message(in_buf, bytes) == 0)
             {
                 print_info();
+
+                for (int ii = 0; ii < NUM_JOINTS; ++ii)
+                {
+                    encdr_vals.steps.push_back((double)tnsy_sts.encoder[ii]);
+                }
+
+                pub_0.publish(encdr_vals);
+                encdr_vals.steps.clear();
+
             }
         }
 
-
         generate_command_message();
+
         memcpy(out_buf, &tnsy_cmd, sizeof(tnsy_cmd));
         tnsy_cmd.crc = crc16_ccitt(out_buf, sizeof(tnsy_cmd) - 2); // crc is the 2 bytes
 
@@ -229,5 +255,4 @@ int main (int argc, char** argv)
         ros::spinOnce();
         loop_rate.sleep();
     }
-
 }

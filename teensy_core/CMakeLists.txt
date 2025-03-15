@@ -1,6 +1,11 @@
 cmake_minimum_required(VERSION 3.0.2)
 project(teensy_core)
 
+add_compile_options(-std=c++17)
+add_compile_options(-Wno-psabi) # remove annoying warning about vectors
+
+
+
 # set(CMAKE_COMPILE_WARNING_AS_ERROR ON)
 
 find_package(catkin REQUIRED COMPONENTS

@@ -16,8 +16,28 @@ MoveManager::MoveManager (ros::NodeHandle *nh)
 
     joint_position_cmd = nh->advertise<daedalus_msgs::teensy_message>("update_teensy_cmd", 10, this);
 
+    encoder_values = nh->subscribe("encoder_values", 
+                                   10, 
+                                   &MoveManager::encoder_monitor, 
+                                   this);
+
     ROS_INFO("initialized the Move Manager");
 
+}
+
+
+/**
+ * NOTE: This is a dangerous design because there is a scenario where multiple
+ *       threads are attempting to read/write to the same point in memory thus
+ *       causing the process to fail. 
+ * TODO: Add a mutex or something to lock the shared memory
+ */
+void MoveManager::encoder_monitor (const daedalus_msgs::teensy_message::ConstPtr& msg)
+{
+    for (int ii = 0; ii < NUM_JOINTS; ++ii)
+    {
+        current_enc_pos[ii] = msg->steps[ii];
+    }
 }
 
 /**
