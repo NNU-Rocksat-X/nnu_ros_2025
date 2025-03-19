@@ -1,5 +1,12 @@
 /**
  * Move manager
+ * 
+ * This ROS node follows the standard multithreaded ROS node design where the 
+ * services, publishers, and subscribers all share the threads to allow for 
+ * optimal scheduling efficiency and minimal task downtime. 
+ * 
+ * @author Riley Mark 
+ * @author March 18, 2025
  */
 
  #include <ros/ros.h>
@@ -31,7 +38,9 @@ class MoveManager
 
         volatile float desired_enc_pos[NUM_JOINTS];
         volatile float current_enc_pos[NUM_JOINTS];
-        float move_tolerance[NUM_JOINTS];
+        std::vector<double> move_tolerance;
         float move_timeout;
+
+        std::string current_name_space;
 
 };

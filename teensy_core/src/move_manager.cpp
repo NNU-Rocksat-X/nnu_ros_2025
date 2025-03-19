@@ -1,22 +1,50 @@
 /**
  * Move manager
  * 
- * TODO: set up subscriber to publisher for encoder values feedback
+ * This ROS node follows the standard multithreaded ROS node design where the 
+ * services, publishers, and subscribers all share the threads to allow for 
+ * optimal scheduling efficiency and minimal task downtime. 
+ * 
+ * @author Riley Mark 
+ * @author March 18, 2025
  */
+
 #include "move_manager.h"
 
 /**
+ * The MoveManager constructor
  * 
+ * Initializes the desired encoder and current encoder arrays. Grabs movement 
+ * parameters from ROS params. Initializes the joint pose service, joint 
+ * position command publisher, and the encoder values subscriber.
+ * 
+ * @return - none
  */
 MoveManager::MoveManager (ros::NodeHandle *nh)
 {
-    move_timeout = 10;
+    std::string timeout_param_key;
+    std::string move_tolerance_param_key;
 
     for (int ii = 0; ii < NUM_JOINTS; ii++)
     {
         desired_enc_pos[ii] = 0;
         current_enc_pos[ii] = 0;
-        move_tolerance[ii] = 0.1;
+        // move_tolerance[ii] = 0.1;
+    }
+    
+    current_name_space = ros::this_node::getNamespace();
+    timeout_param_key = current_name_space + "/movement/timeout";
+    move_tolerance_param_key = current_name_space + "/movement/tolerance";
+
+
+    if (!ros::param::get(timeout_param_key, move_timeout))
+    {
+        ROS_WARN("timeout param not found");
+    }
+
+    if (!ros::param::get(move_tolerance_param_key, move_tolerance))
+    {
+        ROS_WARN("tolerance param not found");
     }
 
     joint_pose_service = nh->advertiseService("joint_pose_cmd", 
@@ -125,8 +153,6 @@ bool MoveManager::joint_pose_cmd (daedalus_msgs::joint_pose_cmd::Request &req,
         }
 
         joint_position_cmd.publish(tnsy_msg);
-
-        ROS_INFO("Pushed new teensy params");
 
         // monitor for completion
         start_time = ros::Time::now();
