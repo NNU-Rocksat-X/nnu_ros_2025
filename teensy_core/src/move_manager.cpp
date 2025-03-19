@@ -10,10 +10,22 @@
  */
 MoveManager::MoveManager (ros::NodeHandle *nh)
 {
-    joint_pose_service = nh->advertiseService("joint_pose_cmd", 
-                                            &MoveManager::joint_pose_cmd, this);
+    move_timeout = 10;
 
-    joint_position_cmd = nh->advertise<daedalus_msgs::teensy_message>("update_teensy_cmd", 10, this);
+    for (int ii = 0; ii < NUM_JOINTS; ii++)
+    {
+        desired_enc_pos[ii] = 0;
+        current_enc_pos[ii] = 0;
+        move_tolerance[ii] = 0.1;
+    }
+
+    joint_pose_service = nh->advertiseService("joint_pose_cmd", 
+                                              &MoveManager::joint_pose_cmd, 
+                                              this);
+
+    joint_position_cmd = nh->advertise<daedalus_msgs::teensy_message>("update_teensy_cmd", 
+                                                                      10, 
+                                                                      this);
 
     encoder_values = nh->subscribe("encoder_values", 
                                    10, 
@@ -42,103 +54,113 @@ void MoveManager::encoder_monitor (const daedalus_msgs::teensy_message::ConstPtr
 
 
 /**
+ * Is the movement complete? Checks that the current encoder positions are 
+ * withtin the specified tolerance.
+ *  
+ * @return - true, movement is complete
+ */
+bool MoveManager::is_it_complete (void)
+{
+    std::vector<bool> complete;
+    bool retval = false;
+
+    for (int ii = 0; ii < NUM_JOINTS; ii++)
+    {
+        if (fabs(current_enc_pos[ii] - desired_enc_pos[ii]) <= move_tolerance[ii])
+        {
+            retval = true;
+        }
+        else 
+        {
+            retval = false;
+        }
+    }
+
+    if (retval)
+    {
+        for (int ii = 0; ii < NUM_JOINTS; ii++)
+        {
+            ROS_INFO("Complete: %d", ii);
+        }
+    }
+
+    return retval;
+}
+
+
+/**
  * Joint Pose Command Service
  * 
  * Is called by the mission state machine to send the arm to a pre-determined 
  * pose.
  * 
- * TODO: dont return true until the movement is complete
+ * @return - res.done indicates the completion of the service. ROS standards 
+ *           dictate that true should be returned once the function should 
+ *           be exited.
  */
 bool MoveManager::joint_pose_cmd (daedalus_msgs::joint_pose_cmd::Request &req,
                                   daedalus_msgs::joint_pose_cmd::Response &res)
 {
     daedalus_msgs::teensy_message tnsy_msg;
     std::string param;
+    bool timeout = false;
+    bool complete = false;
+    ros::Time start_time = ros::Time::now();
+    ros::Duration elapsed_time;
+    std::vector<double> joint_group_positions;
+    ros::Rate rate(10);
 
     param =  "/daedalus/" + req.pose_name;
+
     ROS_INFO("Moving to joint state: %s", param.c_str());
-    
-    std::vector<double> joint_group_positions; // changed from double to float
     
     if (ros::param::get(param, joint_group_positions))
     {
-        ROS_INFO("Joint angles: %f, %f, %f", joint_group_positions[0], joint_group_positions[1], joint_group_positions[2]);
-    
-        bool plan_success = true;
-    
-        if (plan_success) {
-            
-        
-            for (int kk = 0; kk < joint_group_positions.size(); ++kk) { 
-                tnsy_msg.steps.push_back(joint_group_positions[kk]);
-            }
-    
-            ROS_INFO("publishing");
-            joint_position_cmd.publish(tnsy_msg);
-    
-            ros::Duration(0.1).sleep();
-    
-            // bool completion_status = wait_until_complete(joint_group_positions);
-            res.done = true;
-            return true;
+
+        // publish the message
+        for (int ii = 0; ii < NUM_JOINTS; ++ii) 
+        { 
+            tnsy_msg.steps.push_back(joint_group_positions[ii]);
+            desired_enc_pos[ii] = joint_group_positions[ii];
         }
-        else 
+
+        joint_position_cmd.publish(tnsy_msg);
+
+        ROS_INFO("Pushed new teensy params");
+
+        // monitor for completion
+        start_time = ros::Time::now();
+        while (ros::ok())
         {
-            res.done = false;
-            return true;
+            complete = is_it_complete();
+
+            if (complete)
+            {
+                res.done = true;
+                return true;
+            }
+
+            elapsed_time = ros::Time::now() - start_time;
+            if (elapsed_time.toSec() > move_timeout)
+            {
+                ROS_WARN("Movement timed out.");
+                res.done = false;
+                return true;
+            }
+
+            rate.sleep();
         }
     } 
     else 
     {
-        res.done = false;
         ROS_WARN("Joint pose does not exist!");
-        
+        res.done = false;
         return true;
     }
-}
 
-/**
- * 
- */
-bool MoveManager::wait_until_complete(std::vector<double> joint_cmds)
-{
-    float POSITION_ACCURACY = 0.1;
-    int MAX_WAIT = 100;
-    std::vector<std::string> joint_names;
-
-    ros::param::get("stepper_config/joint_names", joint_names);
-    ros::param::get("stepper_config/goal_position_accuracy", POSITION_ACCURACY);
-    ros::param::get("stepper_config/max_goal_time", MAX_WAIT);
-
-    int joints_complete = 0;
-    int cnt = 0;
-
-    while (joints_complete < joint_cmds.size())
-    {
-        ROS_INFO("Waiting for move to finish...");
-        joints_complete = 0;
-        // robot_state::RobotState current_state(*move_group->getCurrentState());
-        for (int i = 0; i < 8; i++) // removed size of joint_cmds to replace it with 7.. trying to remove hang time from this function
-        {
-            // const double* joint_pos = current_state.getJointPositions(joint_names[i]);
-            // ROS_INFO("---- J%i ----", i);
-            // ROS_INFO("Current: %f", *joint_pos);
-            // ROS_INFO("cmd: %f", joint_cmds[i]);
-            // if (abs(*joint_pos - joint_cmds[i]) < POSITION_ACCURACY) {
-            //     joints_complete += 1;
-            // }
-        }
-
-        if (cnt > MAX_WAIT*10)
-        {
-            return false;
-        }
-        cnt++;
-        ros::Duration(0.1).sleep();
-    }
+    res.done = false;
     return true;
 }
-
 
 
 /**
