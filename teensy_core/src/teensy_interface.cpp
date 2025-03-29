@@ -77,13 +77,13 @@ int parse_message (const uint8_t* buf, int size)
     memcpy(&hdr_chk, buf, sizeof(hdr_chk));
     if (hdr_chk == 0x5555)
     {
-        // ROS_INFO("beginning of message found");
+        ROS_INFO("beginning of message found");
 
         calc_crc = crc16_ccitt(buf, size - 2);
         memcpy(&rec_crc, buf + size - 2, sizeof(rec_crc));
         if (calc_crc == rec_crc)
         {
-            // ROS_INFO("Passed CRC.");
+            ROS_INFO("Passed CRC.");
             memcpy(&tnsy_sts, buf, size - 2);
 
             return 0;
@@ -246,11 +246,12 @@ int main (int argc, char** argv)
 
         generate_command_message();
 
-        memcpy(out_buf, &tnsy_cmd, sizeof(tnsy_cmd));
+        memcpy(out_buf, &tnsy_cmd, sizeof(tnsy_cmd) - 2);
         tnsy_cmd.crc = crc16_ccitt(out_buf, sizeof(tnsy_cmd) - 2); // crc is the 2 bytes
 
         memcpy(out_buf, &tnsy_cmd, sizeof(tnsy_cmd));
         write(ser_fd, out_buf, sizeof(tnsy_cmd));
+        ROS_INFO("serial command written");
 
         ros::spinOnce();
         loop_rate.sleep();
