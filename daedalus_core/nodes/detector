@@ -1,0 +1,154 @@
+#!/usr/bin/env python3
+
+##
+# GPIO detection node that uses the standard raspberry pi python gpio library. 
+# This node sits a polls the GPIO pins and publishes on "inhibit_status" based
+# on the state of the inhibit pins.
+#
+# @author Riley Mark
+# @author April 22, 2025
+##
+
+# TODO: make sure that RPi.GPIO is installed from root:
+# sudo apt-cache seaerch python3-rpi.gpio
+# sudo apt-get install python3-rpi.gpio
+
+# TODO: make sure that the user is can access the GPIO library
+# sudo groupadd gpio
+# sudo usermod -a -G gpio <user_name>
+# sudo grep gpio /etc/group
+# sudo chown root.gpio /dev/mem (this could also be /dev/gpiomem so dont just run this randomly)
+# sudo chmod g+rw /dev/mem
+
+import RPi.GPIO as GPIO
+import rospy
+from daedalus_msgs.srv import inhibit_detection, inhibit_detectionResponse
+
+POLL_FREQ = 10.0 # freq in hz
+INHIBIT_PIN_0 = 5
+INHIBIT_PIN_1 = 6
+DEBOUNCE_CYCLES = 20
+
+
+##
+# Class to debounce GPIOs. Im pretty sure there is built in functionality in 
+# RPi.GPIO, but hey someone on the team took the time to write this so its gonna
+# stay for now. At least we know the GPIOs really are debounced. 
+##
+class Detector:
+    def __init__(self, _pin_number, _debounce_threshold):
+        self.pin_number = _pin_number
+        self.debounce_threshold = _debounce_threshold
+
+        self.persistence = 0
+        self.state = False
+
+        GPIO.setup(self.pin_number, GPIO.IN)
+
+
+    def detect(self):
+        current_state = GPIO.input(self.pin_number)
+
+        # debounce the input
+        if current_state:
+            self.persistence += 1
+
+            if self.persistence > self.debounce_threshold:
+                self.state = True
+            else:
+                self.state = False
+                rospy.loginfo(f"pin {self.pin_number} is {self.state}")
+        else:
+            self.persistence = 0
+
+            self.state = False
+
+        return self.state
+
+
+    def get_state(self):
+        return self.state
+
+
+class detector:
+    def __init__(self):
+        self.p0 = Detector(_pin_number=INHIBIT_PIN_0, 
+                           _debounce_threshold=DEBOUNCE_CYCLES)
+
+        self.p1 = Detector(_pin_number=INHIBIT_PIN_1, 
+                           _debounce_threshold=DEBOUNCE_CYCLES)
+
+        self.srv_0 = rospy.Service('inhibit_detection_0',
+                                   inhibit_detection,
+                                   self.inhibit_detector)
+
+
+    ##
+    # Service handler function for detecting the inhibits. 
+    #
+    # @return - two bools for the states of each inhibit pin
+    #
+    # TODO: How many inhibits does the project need? parial and full? 
+    # TODO: RF inhibit to leave the wifi chips in the canister?
+    # TODO: why arent both gpios working???
+    ##
+    def inhibit_detector(self, req):
+        pin0 = self.p0.detect()
+        pin1 = self.p1.detect()
+        return inhibit_detectionResponse(inhibit_0_status=pin0, 
+                                         inhibit_1_status=pin1)
+
+
+##
+# Init the GPIOs
+# 
+# @param mode - board or bcm
+##
+def init_gpio(mode):
+    if mode == "board":
+        try:
+            GPIO.setmode(GPIO.BOARD)
+            return True
+        except:
+            rospy.logwarn("Did not initialize the gpios")
+            return False
+
+    elif mode == "bcm":
+        try:
+            GPIO.setmode(GPIO.BCM)
+            return True
+        except:
+            rospy.logwarn("Did not initialize the gpios")
+            return False
+
+    else:
+        GPIO.setmode(GPIO.BOTH)
+        return False
+
+##
+# Cleans up gpios
+##
+def cleanup():
+    try:
+        GPIO.cleanup()
+        return True
+
+    except:
+        rospy.logwarn("GPIO detector node is not cleaned up.")
+        return False
+
+##
+# M A I N
+##
+if __name__ == '__main__':
+    rospy.init_node('detector')
+
+    if init_gpio(mode='bcm') == False:
+        rospy.logerr(f"Detector Node failed")
+
+    dt = detector()
+
+    rospy.spin()
+    
+    if cleanup() == False:
+        rospy.logerr(f"Detector Node failed to cleanup.")
