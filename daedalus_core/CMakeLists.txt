@@ -13,7 +13,6 @@ catkin_python_setup()
 
 catkin_package(
     CATKIN_DEPENDS
-
 )
 
 # Ensure Python modules are available

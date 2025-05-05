@@ -27,16 +27,29 @@ class Mission_SM:
     def mission_sm(self):
         with self.sm:
 
-            # TODO: add inhibits here
+            smach.StateMachine.add('inhibit_detect',
+                                   Check_Inhibit(),
+                                   transitions={'full_inhibit': 'Mission_Success',
+                                                'partial_inhibit': 'Mission_Success',
+                                                'no_inhibit': 'wait_0'})
 
-            smach.StateMachine.add('Unfold', unfold_sm,
-                                   transitions={'Success': 'Wait_1',
+            smach.StateMachine.add('wait_0', 
+                                   Wait_State(5),
+                                   transitions={'Complete': 'unfold'}) 
+
+            # TODO: add service for zeroing the arm
+
+            smach.StateMachine.add('unfold', 
+                                   unfold_sm,
+                                   transitions={'Success': 'wait_1',
                                                 'Fail': 'Mission_Fail'}) 
 
-            smach.StateMachine.add('Wait_1', Wait_State(5),
-                                   transitions={'Complete': 'Fold'}) 
+            smach.StateMachine.add('wait_1', 
+                                   Wait_State(5),
+                                   transitions={'Complete': 'fold'}) 
 
-            smach.StateMachine.add('Fold', fold_sm,
+            smach.StateMachine.add('fold', 
+                                   fold_sm,
                                    transitions={'Success': 'Mission_Success',
                                                 'Fail': 'Mission_Fail'}) 
 

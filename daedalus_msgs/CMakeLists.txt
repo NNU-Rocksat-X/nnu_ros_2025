@@ -14,6 +14,7 @@ add_message_files(
 add_service_files(
     FILES
     joint_pose_cmd.srv
+    inhibit_detection.srv
 )
 
 

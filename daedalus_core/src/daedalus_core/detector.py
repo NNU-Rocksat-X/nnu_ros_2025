@@ -3,45 +3,57 @@
 import RPi.GPIO as GPIO
 import time
 import rospy
+from daedalus_msgs.msg import inhibit_detection
+
+POLL_FREQ = 10.0 # freq in hz
+INHIBIT_PIN_0 = 5
+INHIBIT_PIN_1 = 6
 
 
 GPIO.setmode(GPIO.BCM)
+
 class Detector:
     def __init__(self, pin_number, persistence_threshold):
-        GPIO.setup(pin_number, GPIO.IN)
         self.pin_number = pin_number
         self.persistence_threshold = persistence_threshold
 
         self.persistence = 0
         self.state = False
 
+        GPIO.setup(pin_number, GPIO.IN)
+
+
     def detect(self):
-            current_state = GPIO.input(self.pin_number)
-            if (current_state):
-                self.persistence += 1
-            else:
-                self.persistence = 0
+        current_state = GPIO.input(self.pin_number)
 
-            if self.persistence > self.persistence_threshold:
-                self.state = True
-            else:
-                self.state = False
+        if (current_state):
+            self.persistence += 1
+        else:
+            self.persistence = 0
 
-    def get_state(self):
-    
+        if self.persistence > self.persistence_threshold:
+            self.state = True
+        else:
+            self.state = False
+
         return self.state
 
-def cleanup():
-    GPIO.cleanup()
+    def get_state(self):
+        return self.state
+
+    def cleanup(self):
+        GPIO.cleanup()
 
 if __name__ == "__main__":
-    p1 = Detector(5,20)
-    p1.detect()
+    p1 = Detector(pin_numer=5, persistence_threshold=20)
 
+    pub = rospy.Publisher("inhibit_detection", inhibit_detection, queue_size=1)
+
+    # Poll the gpio at 10 hz
     while not rospy.is_shutdown():
-        time.sleep(0.1)
+        time.sleep(1/POLL_FREQ)
         p1.detect()
 
-        print (p1.get_state())
+        print(p1.get_state())
     
-    cleanup()
+    p1.cleanup()
