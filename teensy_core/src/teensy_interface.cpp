@@ -25,7 +25,7 @@
 
 // TODO: if you want to use the pins to communicate, you have to turn off the 
 // serial console and you have to turn on UART0
-#define TEENSY_SER_PORT "/dev/ttyAMA1" // TODO: change this to THS1 or whatever
+#define TEENSY_SER_PORT "/dev/ttyTHS1" // TODO: change this to THS1 or whatever
 #define TEENSY_BAUD_RATE 115200
 #define LOOP_RATE 50
 #define PRINT_DATA 1 // 0 - no print, 1 - print data
