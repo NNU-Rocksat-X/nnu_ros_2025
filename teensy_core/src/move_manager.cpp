@@ -27,9 +27,9 @@ MoveManager::MoveManager (ros::NodeHandle *nh)
 
     for (int ii = 0; ii < NUM_JOINTS; ii++)
     {
-        desired_enc_pos[ii] = 0;
+        desired_enc_pos[ii] = 200;
         current_enc_pos[ii] = 0;
-        // move_tolerance[ii] = 0.1;
+        //move_tolerance[ii] = 0.1;
     }
     
     current_name_space = ros::this_node::getNamespace();

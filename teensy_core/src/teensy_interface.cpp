@@ -7,12 +7,12 @@
  * @author Febuary 27, 2025
  * 
  * TODO: Add service for updating arm position
+ * TODO: Gear ratios and step to degree values?
  * 
  ******************************************************************************/
 
 #include <ros/ros.h>
 #include <stdlib.h>
-#include <stdlib.h> 
 #include <fstream>
 #include <fcntl.h>      
 #include <termios.h>    
@@ -25,7 +25,7 @@
 
 // TODO: if you want to use the pins to communicate, you have to turn off the 
 // serial console and you have to turn on UART0
-#define TEENSY_SER_PORT "/dev/ttyTHS1" // TODO: change this to THS1 or whatever
+#define TEENSY_SER_PORT "/dev/ttyTHS1"
 #define TEENSY_BAUD_RATE 115200
 #define LOOP_RATE 50
 #define PRINT_DATA 1 // 0 - no print, 1 - print data
@@ -33,7 +33,7 @@
 static teensy_command_t tnsy_cmd = {0};
 static teensy_status_t tnsy_sts = {0};
 
-uint16_t gear_ratio[NUM_JOINTS] = {1, 2, 3, 4, 5, 6};
+uint16_t gear_ratio[NUM_JOINTS] = {1, 2, 3, 4, 5, 6, 7, 8};
 
 /**
  * Position callback - This callback function updates teensy command position
@@ -160,13 +160,15 @@ void print_info (void)
              tnsy_sts.hdr.seq, 
              tnsy_sts.hdr.len, 
              tnsy_sts.hdr.type);
-    ROS_INFO("%d %d %d %d %d %d",
+    ROS_INFO("%d %d %d %d %d %d %d %d",
              tnsy_sts.encoder[0],
              tnsy_sts.encoder[1],
              tnsy_sts.encoder[2],
              tnsy_sts.encoder[3],
              tnsy_sts.encoder[4],
-             tnsy_sts.encoder[5]);
+             tnsy_sts.encoder[5],
+             tnsy_sts.encoder[6],
+             tnsy_sts.encoder[7]);
     ROS_INFO("%d %d %d",
              tnsy_sts.debug_feild_0,
              tnsy_sts.debug_feild_1,
@@ -178,13 +180,15 @@ void print_info (void)
             tnsy_cmd.hdr.seq, 
             tnsy_cmd.hdr.len, 
             tnsy_cmd.hdr.type);
-    ROS_INFO("%d %d %d %d %d %d",
+    ROS_INFO("%d %d %d %d %d %d %d %d",
             tnsy_cmd.setpoint_position[0],
             tnsy_cmd.setpoint_position[1],
             tnsy_cmd.setpoint_position[2],
             tnsy_cmd.setpoint_position[3],
             tnsy_cmd.setpoint_position[4],
-            tnsy_cmd.setpoint_position[5]);
+            tnsy_cmd.setpoint_position[5],
+            tnsy_cmd.setpoint_position[6],
+            tnsy_cmd.setpoint_position[7]);
     ROS_INFO("%d %d",
             tnsy_cmd.led_state,
             tnsy_cmd.crc);
@@ -251,9 +255,10 @@ int main (int argc, char** argv)
 
         memcpy(out_buf, &tnsy_cmd, sizeof(tnsy_cmd));
         write(ser_fd, out_buf, sizeof(tnsy_cmd));
-        ROS_INFO("serial command written");
+        //ROS_INFO("serial command written");
 
         ros::spinOnce();
         loop_rate.sleep();
+
     }
 }

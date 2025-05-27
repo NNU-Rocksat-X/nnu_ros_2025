@@ -3,6 +3,7 @@
         <include file="$(find daedalus_core)/launch/config.launch"/>
         <include file="$(find teensy_core)/launch/move_manager.launch"/>
         <include file="$(find teensy_core)/launch/teensy_interface.launch"/>
+
         <node pkg="daedalus_core" name="detector" type="detector" output="screen"/>        
 
         <node pkg="daedalus_core" name="mission_state_machine" type="mission_state_machine" output="screen"/>        

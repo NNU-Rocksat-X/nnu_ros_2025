@@ -14,7 +14,7 @@
 #include <stdint.h>
 #include <cstddef>
 
-#define NUM_JOINTS 6
+#define NUM_JOINTS 8
 #define RAD_PER_ENC_STEP 1200 // TODO: someone update this
 #define ENC_STEP_PER_RAD 1200 // TODO: same with this one
 #define CRC_POLY 1021
@@ -39,7 +39,7 @@ typedef struct _teensy_command_t
 {
     teensy_header_t hdr;
 
-    uint16_t setpoint_position[NUM_JOINTS];
+    int16_t setpoint_position[NUM_JOINTS];
     uint16_t led_state;
 
     uint16_t crc;
@@ -49,7 +49,7 @@ typedef struct _teensy_status_t
 {
     teensy_header_t hdr;
 
-    uint16_t encoder[NUM_JOINTS];
+    int16_t encoder[NUM_JOINTS];
     uint16_t debug_feild_0;
     uint16_t debug_feild_1;
 
@@ -66,7 +66,7 @@ typedef struct _teensy_status_t
  * 
  * @return - angle in radians
  */
-double enc_steps_to_rad (uint32_t enc_steps, uint16_t gear_ratio);
+double enc_steps_to_rad (int32_t enc_steps, uint16_t gear_ratio);
 
 /**
  * Converts encoder steps to radians
@@ -76,7 +76,7 @@ double enc_steps_to_rad (uint32_t enc_steps, uint16_t gear_ratio);
  * 
  * @return - angle converted to encoder steps
  */
-uint32_t rad_to_enc_steps (double rad, uint16_t gear_ratio);
+int32_t rad_to_enc_steps (double rad, uint16_t gear_ratio);
 
 /**
  * CRC16 -- Google this. It's one mechanism that allows data to be transferred

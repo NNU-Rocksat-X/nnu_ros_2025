@@ -2,6 +2,7 @@
     <group ns="daedalus">
         <include file="$(find daedalus_core)/launch/config.launch"/>
 
+
         <node pkg="teensy_core" name="move_manager" type="move_manager" output="screen"/>
         <node pkg="teensy_core" name="teensy_interface" type="teensy_interface" output="screen"/>
 

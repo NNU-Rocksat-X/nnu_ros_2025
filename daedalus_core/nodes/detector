@@ -9,7 +9,7 @@
 # @author April 22, 2025
 ##
 
-# TODO: make sure that RPi.GPIO is installed from root:
+# TODO: make sure that RPi.GPIO is installed from root:	--This is installed (25)
 # sudo apt-cache seaerch python3-rpi.gpio
 # sudo apt-get install python3-rpi.gpio
 
