@@ -15,8 +15,8 @@
 #include <cstddef>
 
 #define NUM_JOINTS 8
-#define RAD_PER_ENC_STEP 1200 // TODO: someone update this
-#define ENC_STEP_PER_RAD 1200 // TODO: same with this one
+#define RAD_PER_ENC_STEP 0.0314159265359 // TODO: someone update this
+#define ENC_STEP_PER_RAD 31.8309886184 // TODO: same with this one
 #define CRC_POLY 1021
 #define CRC_INIT 0xFFFF 
 
