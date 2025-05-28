@@ -33,7 +33,7 @@
 static teensy_command_t tnsy_cmd = {0};
 static teensy_status_t tnsy_sts = {0};
 
-uint16_t gear_ratio[NUM_JOINTS] = {1, 2, 3, 4, 5, 6, 7, 8};
+uint16_t gear_ratio[NUM_JOINTS] = {7, 7, 7, 7, 7, 1, 1, 1};
 
 /**
  * Position callback - This callback function updates teensy command position
