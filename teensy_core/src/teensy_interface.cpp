@@ -48,7 +48,7 @@ void position_callback(const daedalus_msgs::teensy_message::ConstPtr& msg)
 
     for (int ii = 0; ii < NUM_JOINTS; ii++)
     {
-        tnsy_cmd.setpoint_position[ii] = (uint16_t)msg->steps[ii];
+        tnsy_cmd.setpoint_position[ii] = (int16_t)msg->steps[ii];
     }
 
     // this isnt a great place for this.. Generally callback should be kept 
