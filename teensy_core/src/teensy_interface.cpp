@@ -100,15 +100,16 @@ int receive_ser_msg (int ser_fd)
         if (buf.size() >= sizeof(tnsy_sts)) 
         {
             // Extract the crc from the message, and calculate what it should be
-            memcpy(&rec_crc, buf + size - 2, sizeof(rec_crc));
-            calc_crc = crc16_ccitt(buffer, size - 2);
+            // TODO: make sure that this crc extraction is doing what it is supposed to 
+            memcpy(&rec_crc, &buf.data(), sizeof(rec_crc));
+            calc_crc = crc16_ccitt(buf.data(), sizeof(tnsy_sts) - 2);
 
             // compare CRCs
             if (rec_crc == calc_crc) 
             {
                 // yay the message is legit so copy it onto the struct
                 ROS_INFO("Message parsed successfully");
-                memcpy(&tnsy_sts, buf.data() + sizeof(uint16_t), sizeof(tnsy_sts));
+                memcpy(&tnsy_sts, buf.data(), sizeof(tnsy_sts));
                 buf.erase(buf.begin(), buf.begin() + sizeof(tnsy_sts));
                 return 1;
             } 
@@ -116,18 +117,20 @@ int receive_ser_msg (int ser_fd)
             {
                 // if the crc does not pass, abort  
                 ROS_WARN("CRC mismatch");
-                buf.erase(buf.begin()); // try resync
+                buf.erase(buf.begin());
             }
         }
     }
 
+    // handle the error if there is one
     if (errno != EAGAIN && errno != EWOULDBLOCK) 
     {
-        ROS_ERROR("read");
+        ROS_ERROR("Serial read error: %s", strerror(errno));
         return -1;
     }
 
-    return 0; // No valid message yet
+    // no valid message yet
+    return 0; 
 }
 
 
@@ -311,26 +314,17 @@ int main (int argc, char** argv)
     ros::Rate loop_rate(LOOP_RATE);
     while(ros::ok())
     {
-        bytes = read(ser_fd, &in_buf, sizeof(tnsy_sts));
-        // ROS_INFO("read in %d bytes as %d", bytes, in_buf[0]);
-        // ROS_INFO("print");
-
-        if (bytes >= 0)
+        if (receive_ser_msg(ser_fd) == 1)
         {
-            // ROS_INFO("read in %d bytes", bytes);
-            if (parse_message(in_buf, bytes) == 0)
+            // print_info();
+
+            for (int ii = 0; ii < NUM_JOINTS; ++ii)
             {
-                print_info();
-
-                for (int ii = 0; ii < NUM_JOINTS; ++ii)
-                {
-                    encdr_vals.steps.push_back((double)tnsy_sts.encoder[ii]);
-                }
-
-                pub_0.publish(encdr_vals);
-                encdr_vals.steps.clear();
-
+                encdr_vals.steps.push_back((double)tnsy_sts.encoder[ii]);
             }
+
+            pub_0.publish(encdr_vals);
+            encdr_vals.steps.clear();
         }
 
         generate_command_message();
