@@ -180,29 +180,43 @@ int parse_message (const uint8_t* buf, int size)
  * Initializes the serial port. 
  * 
  * Settings:
- *  - baud 115200
+ *  - Baud 115200
  *  - 8 data 1 stop bit (standard)
- *  - ignore modem control lines
- *  - read once 26 bytes are available (not standard but this will help debugging)
- *  - timeout of 1 second
- * 
- * TODO: modify this to set the port to non blocking
+ *  - Ignore modem control lines
+ *  - Minimum of 0 bytes to return read call
+ *  - Read call timeout of 0 seconds
  * 
  * @param port - the serial port that the teensy is connected to (eg. /dev/ttyACM1)
  * 
- * @return - file descriptor
+ * @return - file descriptor, -1 error
  */
 int init_serial (const char* port) 
 {
-    int fd = open(port, O_RDWR | O_NOCTTY | O_SYNC);
+    struct termios options;
+    int fd = 0;
+    int flags = 0;
+
+    fd = open(port, O_RDWR | O_NOCTTY | O_SYNC);
     if (fd == -1) 
     {
-        perror("Error opening serial port");
+        ROS_ERROR("Error opening serial port");
         return -1;
     }
 
-    struct termios options;
-    tcgetattr(fd, &options);
+    flags = fcntl(fd, F_GETFL, 0);
+    if (flags == -1 || fcntl(fd, F_SETFL, flags | O_NONBLOCK) == -1) 
+    {
+        ROS_ERROR("Error setting non-blocking mode");
+        close(fd);
+        return -1;
+    }
+
+    if (tcgetattr(fd, &options) != 0) 
+    {
+        ROS_ERROR("Error getting terminal attributes");
+        close(fd);
+        return -1;
+    }
 
     cfmakeraw(&options);  // Set raw mode
 
@@ -211,10 +225,16 @@ int init_serial (const char* port)
 
     options.c_cflag |= (CLOCAL | CREAD);  // Enable receiver, ignore modem control lines
 
-    // options.c_cc[VMIN]  = sizeof(tnsy_sts);  // TODO: Read only when 26 bytes available, tune this param
-    options.c_cc[VTIME] = 1;  // Timeout = 1 second
+    options.c_cc[VMIN]  = 0; 
+    options.c_cc[VTIME] = 0;
 
-    tcsetattr(fd, TCSANOW, &options);
+    if (tcsetattr(fd, TCSANOW, &options) != 0) 
+    {
+        perror("Error setting terminal attributes");
+        close(fd);
+        return -1;
+    }
+
     tcflush(fd, TCIFLUSH);
 
     return fd;
