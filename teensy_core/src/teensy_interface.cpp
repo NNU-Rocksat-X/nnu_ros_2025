@@ -4,7 +4,7 @@
  * @brief updates setpoints for robotic arm positions, returns encoder values
  *
  * @author Riley Mark 
- * @author Febuary 27, 2025
+ * @author February 27, 2025
  * 
  * TODO: Add service for updating arm position
  * TODO: Gear ratios and step to degree values?
@@ -51,7 +51,7 @@ void position_callback(const daedalus_msgs::teensy_message::ConstPtr& msg)
         tnsy_cmd.setpoint_position[ii] = (int16_t)msg->steps[ii];
     }
 
-    // this isnt a great place for this.. Generally callback should be kept 
+    // this isn't a great place for this.. Generally callback should be kept 
     // lean, but who is keeping track amirite
     tnsy_cmd.hdr.header = 0x5555;
     tnsy_cmd.hdr.seq++;
@@ -62,9 +62,81 @@ void position_callback(const daedalus_msgs::teensy_message::ConstPtr& msg)
 
 
 /**
+ * Receive Serial Message
+ * 
+ * Reads bytes until the header is found, then read in a full message. Once a 
+ * full message is in the buffer, the crc is checked and the message is copied 
+ * onto the message struct.
+ * 
+ * TODO: Test and verify this function. Since I have no way of testing this 
+ *       at home, you'll have to pull out all the stops to debug it. I've put in
+ *       as many comments as I could think of to help you out. As always, make 
+ *       sure you give the whole function a read before jumping in 
+ * 
+ * @param ser_fd - serial port read file descriptor
+ * 
+ * @return - 1 success, 0 fail, -1 error
+ */
+int receive_ser_msg (int ser_fd)
+{
+    static std::vector<uint8_t> buf;
+    uint8_t byte;
+    uint16_t rec_crc = 0;
+    uint16_t calc_crc;
+
+    // read in one byte at a time
+    while (read(ser_fd, &byte, 1) == 1) 
+    {
+        // put the byte in a buffer
+        buf.push_back(byte);
+
+        // Read bytes into the buffer one at a time and check if they are the header
+        while (buf.size() >= 2 && !(buf[0] == 0x55 && buf[1] == 0x55)) 
+        {
+            buf.erase(buf.begin());
+        }
+
+        // parse message onces enough bytes are in the buffer
+        if (buf.size() >= sizeof(tnsy_sts)) 
+        {
+            // Extract the crc from the message, and calculate what it should be
+            memcpy(&rec_crc, buf + size - 2, sizeof(rec_crc));
+            calc_crc = crc16_ccitt(buffer, size - 2);
+
+            // compare CRCs
+            if (rec_crc == calc_crc) 
+            {
+                // yay the message is legit so copy it onto the struct
+                ROS_INFO("Message parsed successfully");
+                memcpy(&tnsy_sts, buf.data() + sizeof(uint16_t), sizeof(tnsy_sts));
+                buf.erase(buf.begin(), buf.begin() + sizeof(tnsy_sts));
+                return 1;
+            } 
+            else 
+            {
+                // if the crc does not pass, abort  
+                ROS_WARN("CRC mismatch");
+                buf.erase(buf.begin()); // try resync
+            }
+        }
+    }
+
+    if (errno != EAGAIN && errno != EWOULDBLOCK) 
+    {
+        ROS_ERROR("read");
+        return -1;
+    }
+
+    return 0; // No valid message yet
+}
+
+
+/**
  * Parses teensy messages 
  * 
  * @return - 0 success, 1 invalid header, 2 invalid crc
+ * 
+ * TODO: Currently Unused
  */
 int parse_message (const uint8_t* buf, int size) 
 {
@@ -111,7 +183,9 @@ int parse_message (const uint8_t* buf, int size)
  *  - read once 26 bytes are available (not standard but this will help debugging)
  *  - timeout of 1 second
  * 
- * @param port - the serial port that the teensy is connected to (ex. /dev/ttyACM1)
+ * TODO: modify this to set the port to non blocking
+ * 
+ * @param port - the serial port that the teensy is connected to (eg. /dev/ttyACM1)
  * 
  * @return - file descriptor
  */
@@ -134,8 +208,8 @@ int init_serial (const char* port)
 
     options.c_cflag |= (CLOCAL | CREAD);  // Enable receiver, ignore modem control lines
 
-    options.c_cc[VMIN]  = sizeof(tnsy_sts);  // Read only when 26 bytes available, tune this param
-    options.c_cc[VTIME] = 10;  // Timeout = 1 second
+    // options.c_cc[VMIN]  = sizeof(tnsy_sts);  // TODO: Read only when 26 bytes available, tune this param
+    options.c_cc[VTIME] = 1;  // Timeout = 1 second
 
     tcsetattr(fd, TCSANOW, &options);
     tcflush(fd, TCIFLUSH);
@@ -144,6 +218,11 @@ int init_serial (const char* port)
 }
 
 
+/**
+ * Sets header, sequence, length, and type of outgoing serial commands.
+ * 
+ * @return - none
+ */
 void generate_command_message ()
 {
     tnsy_cmd.hdr.header = 0x5555;
@@ -152,6 +231,12 @@ void generate_command_message ()
     tnsy_cmd.hdr.type = 1;
 }
 
+
+/**
+ * Prints current command and status messages
+ * 
+ * @return - none
+ */
 void print_info (void)
 {
     ROS_INFO("------------ Teensy Status ------------");
@@ -195,9 +280,9 @@ void print_info (void)
     ROS_INFO("\n");
 }
 
+
 /**
  * M A I N
- * 
  */
 int main (int argc, char** argv)
 {
