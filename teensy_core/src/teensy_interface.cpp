@@ -56,6 +56,7 @@ void position_callback(const daedalus_msgs::teensy_message::ConstPtr& msg)
     tnsy_cmd.hdr.header = 0x5555;
     tnsy_cmd.hdr.seq++;
     tnsy_cmd.hdr.len = sizeof(tnsy_cmd);
+    tnsy_cmd.hdr.type = 1;
 
     ROS_INFO("Joint positions updated.");
 }
@@ -249,9 +250,9 @@ int init_serial (const char* port)
 void generate_command_message ()
 {
     tnsy_cmd.hdr.header = 0x5555;
-    tnsy_cmd.hdr.seq++;
+    // nsy_cmd.hdr.seq++; // I'm pretty sure that this is taken care of in the callback
     tnsy_cmd.hdr.len = sizeof(tnsy_cmd);
-    tnsy_cmd.hdr.type = 1;
+    // tnsy_cmd.hdr.type = 1; // same with this
 }
 
 
