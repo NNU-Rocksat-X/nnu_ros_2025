@@ -98,11 +98,11 @@ int receive_ser_msg (int ser_fd)
         }
 
         // parse message onces enough bytes are in the buffer
-        if (buf.size() >= sizeof(tnsy_sts)) 
+        if (buf.size() >= sizeof(tnsy_sts))
         {
             // Extract the crc from the message, and calculate what it should be
             // TODO: make sure that this crc extraction is doing what it is supposed to 
-            memcpy(&rec_crc, &buf.data(), sizeof(rec_crc));
+            memcpy(&rec_crc, buf.data() + sizeof(tnsy_sts) - 2, sizeof(rec_crc));
             calc_crc = crc16_ccitt(buf.data(), sizeof(tnsy_sts) - 2);
 
             // compare CRCs
@@ -118,7 +118,14 @@ int receive_ser_msg (int ser_fd)
             {
                 // if the crc does not pass, abort  
                 ROS_WARN("CRC mismatch");
-                buf.erase(buf.begin());
+		if (buf.size() >= 2) 
+		{
+		    buf.erase(buf.begin(), buf.begin() + 2);
+		} else {
+		buf.clear();
+		}
+		
+                //buf.erase(buf.begin());
             }
         }
     }
@@ -337,7 +344,7 @@ int main (int argc, char** argv)
     {
         if (receive_ser_msg(ser_fd) == 1)
         {
-            // print_info();
+            print_info();
 
             for (int ii = 0; ii < NUM_JOINTS; ++ii)
             {

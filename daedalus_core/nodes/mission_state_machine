@@ -27,15 +27,16 @@ class Mission_SM:
     def mission_sm(self):
         with self.sm:
 
-            smach.StateMachine.add('inhibit_detect',
-                                   Check_Inhibit(),
-                                   transitions={'full_inhibit': 'Mission_Success',
-                                                'partial_inhibit': 'Mission_Success',
-                                                'no_inhibit': 'wait_0'})
 
-            smach.StateMachine.add('wait_0', 
-                                   Wait_State(5),
-                                   transitions={'Complete': 'unfold'}) 
+            #smach.StateMachine.add('inhibit_detect',
+            #                       Check_Inhibit(),
+            #                       transitions={'full_inhibit': 'Mission_Success',
+            #                                    'partial_inhibit': 'Mission_Success',
+            #                                    'no_inhibit': 'wait_0'})
+
+            #smach.StateMachine.add('wait_0', 
+            #                       Wait_State(5),
+            #                       transitions={'Complete': 'unfold'}) 
 
             # TODO: add service for zeroing the arm
 
