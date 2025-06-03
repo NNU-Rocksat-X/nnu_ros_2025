@@ -60,7 +60,6 @@ with unfold_sm:
         step_str = 'step_' + str(i)
         delay_str = 'delay_' + str(i)
 
-	ROS_INFO("Step # %d", i)
 
         if i == NUM_FOLDING_STEPS - 1:
             smach.StateMachine.add(step_str, Joint_Pose_State('unfold/' + step_str, allowed_attempts=2),
