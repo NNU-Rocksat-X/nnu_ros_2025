@@ -110,13 +110,13 @@ int receive_ser_msg (int ser_fd)
             if (rec_crc == calc_crc) 
             {
                 // yay the message is legit so copy it onto the struct
-                ROS_INFO("Message parsed successfully");
+                // ROS_INFO("Message parsed successfully");
                 memcpy(&tnsy_sts, buf.data(), sizeof(tnsy_sts));
 		tcflush(ser_fd, TCIFLUSH);
 
-		ROS_INFO("SEQ: %d", tnsy_sts.hdr.seq);
+		// ROS_INFO("SEQ: %d", tnsy_sts.hdr.seq);
                 buf.erase(buf.begin(), buf.begin() + sizeof(tnsy_sts));
-		buf.clear();
+		//buf.clear();
                 return 1;
             } 
             else 
