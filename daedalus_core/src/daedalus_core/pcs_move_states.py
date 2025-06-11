@@ -62,17 +62,17 @@ with unfold_sm:
 
 
         if i == NUM_FOLDING_STEPS - 1:
-            smach.StateMachine.add(step_str, Joint_Pose_State('unfold/' + step_str, allowed_attempts=2),
+            smach.StateMachine.add(step_str, Joint_Pose_State('unfold/' + step_str, allowed_attempts=1),
                     transitions={'Success': 'Success',
                                  'Fail': 'Fail'})
 
         else:
             rospy.loginfo(i)
-            smach.StateMachine.add(step_str, Joint_Pose_State('unfold/' + step_str, allowed_attempts=2),
+            smach.StateMachine.add(step_str, Joint_Pose_State('unfold/' + step_str, allowed_attempts=1),
                     transitions={'Success': delay_str,
                                  'Fail': 'Fail'})
             
-            smach.StateMachine.add(delay_str, Wait_State(1),
+            smach.StateMachine.add(delay_str, Wait_State(3),
                                    transitions={'Complete': 'step_' + str(i + 1)})
 
 fold_sm = smach.StateMachine(outcomes=['Success', 'Fail'])
@@ -83,16 +83,16 @@ with fold_sm:
 
         if i == 0:
             print("last folding step")
-            smach.StateMachine.add(step_str, Joint_Pose_State('unfold/' + step_str, allowed_attempts=2),
+            smach.StateMachine.add(step_str, Joint_Pose_State('unfold/' + step_str, allowed_attempts=1),
                     transitions={'Success': 'Success',
                                  'Fail': 'Fail'})
 
         else:
-            smach.StateMachine.add(step_str, Joint_Pose_State('unfold/' + step_str, allowed_attempts=2),
+            smach.StateMachine.add(step_str, Joint_Pose_State('unfold/' + step_str, allowed_attempts=1),
                     transitions={'Success': delay_str,
                                  'Fail': 'Fail'})
             
-            smach.StateMachine.add(delay_str, Wait_State(1),
+            smach.StateMachine.add(delay_str, Wait_State(3),
                     transitions={'Complete': 'step_' + str(i - 1)})
 
 # TODO: Add more state machines for how the depth camera will dynamically 

@@ -18,9 +18,9 @@
  * 
  * @return - angle in radians
  */
-double enc_steps_to_rad (int32_t enc_steps, uint16_t gear_ratio)
+double enc_steps_to_deg (int32_t enc_steps, uint16_t gear_ratio)
 {
-    return enc_steps * gear_ratio * RAD_PER_ENC_STEP;
+    return enc_steps * gear_ratio * DEG_PER_ENC_STEP;
 }
 
 /**
@@ -31,9 +31,9 @@ double enc_steps_to_rad (int32_t enc_steps, uint16_t gear_ratio)
  * 
  * @return - angle converted to encoder steps
  */
-int32_t rad_to_enc_steps (double rad, uint16_t gear_ratio)
+int32_t deg_to_enc_steps (double rad, uint16_t gear_ratio)
 {
-    return rad * gear_ratio * ENC_STEP_PER_RAD;
+    return rad * gear_ratio * ENC_STEP_PER_DEG;
 }
 
 /**

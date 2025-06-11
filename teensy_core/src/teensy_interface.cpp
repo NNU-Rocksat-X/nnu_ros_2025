@@ -84,10 +84,13 @@ int receive_ser_msg (int ser_fd)
     uint8_t byte;
     uint16_t rec_crc = 0;
     uint16_t calc_crc;
+	int x = 0;
 
     // read in one byte at a time
     while (read(ser_fd, &byte, 1) == 1) 
     {
+	ROS_INFO("%d",x);
+	++x;
         // put the byte in a buffer
         buf.push_back(byte);
 
@@ -109,14 +112,14 @@ int receive_ser_msg (int ser_fd)
             if (rec_crc == calc_crc) 
             {
                 // yay the message is legit so copy it onto the struct
-                ROS_INFO("Message parsed successfully");
+                //ROS_INFO("Message parsed successfully");
                 memcpy(&tnsy_sts, buf.data(), sizeof(tnsy_sts));
                 buf.erase(buf.begin(), buf.begin() + sizeof(tnsy_sts));
                 return 1;
             } 
             else 
             {
-                // if the crc does not pass, abort  
+                // if the crc does not pass, abort
                 ROS_WARN("CRC mismatch");
 		if (buf.size() >= 2) 
 		{
@@ -125,7 +128,8 @@ int receive_ser_msg (int ser_fd)
 		buf.clear();
 		}
 		
-                //buf.erase(buf.begin());
+                buf.erase(buf.begin());
+		
             }
         }
     }
@@ -344,6 +348,7 @@ int main (int argc, char** argv)
     {
         if (receive_ser_msg(ser_fd) == 1)
         {
+	    //parse_message(in_buf, sizeof(tnsy_sts));
             print_info();
 
             for (int ii = 0; ii < NUM_JOINTS; ++ii)
