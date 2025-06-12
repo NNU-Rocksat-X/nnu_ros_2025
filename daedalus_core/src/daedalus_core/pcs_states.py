@@ -16,8 +16,9 @@ import smach
 import smach_ros
 from daedalus_core.daedalus_services.services import *
 
-INHIBIT_PIN_0 = 12
+INHIBIT_PIN_0 = 11
 INHIBIT_PIN_1 = 13
+MISSION_GO_PIN = 15
 
 
 ##
