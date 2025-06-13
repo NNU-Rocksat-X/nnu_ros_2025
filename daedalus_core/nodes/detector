@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python2.7
 
 ##
 # GPIO detection node that uses the standard raspberry pi python gpio library. 
@@ -10,7 +10,7 @@
 ##
 
 # TODO: make sure that RPi.GPIO is installed from root:	--This is installed (25)
-# sudo apt-cache seaerch python3-rpi.gpio
+# sudo apt-cache search python3-rpi.gpio
 # sudo apt-get install python3-rpi.gpio
 
 # TODO: make sure that the user is can access the GPIO library
@@ -20,13 +20,13 @@
 # sudo chown root.gpio /dev/mem (this could also be /dev/gpiomem so dont just run this randomly)
 # sudo chmod g+rw /dev/mem
 
-import RPi.GPIO as GPIO
+import Jetson.GPIO as GPIO
 import rospy
 from daedalus_msgs.srv import inhibit_detection, inhibit_detectionResponse
 
 POLL_FREQ = 10.0 # freq in hz
-INHIBIT_PIN_0 = 5
-INHIBIT_PIN_1 = 6
+INHIBIT_PIN_0 = 11
+INHIBIT_PIN_1 = 13
 DEBOUNCE_CYCLES = 20
 
 
@@ -57,7 +57,7 @@ class Detector:
                 self.state = True
             else:
                 self.state = False
-                rospy.loginfo(f"pin {self.pin_number} is {self.state}")
+                rospy.loginfo("pin {self.pin_number} is {self.state}")
         else:
             self.persistence = 0
 
@@ -144,11 +144,11 @@ if __name__ == '__main__':
     rospy.init_node('detector')
 
     if init_gpio(mode='bcm') == False:
-        rospy.logerr(f"Detector Node failed")
+        rospy.logerr("Detector Node failed")   
 
     dt = detector()
 
     rospy.spin()
     
     if cleanup() == False:
-        rospy.logerr(f"Detector Node failed to cleanup.")
+        rospy.logerr("Detector Node failed to cleanup.")

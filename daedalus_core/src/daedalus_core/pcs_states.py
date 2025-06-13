@@ -20,7 +20,6 @@ INHIBIT_PIN_0 = 11
 INHIBIT_PIN_1 = 13
 MISSION_GO_PIN = 15
 
-
 ##
 # Calls the inhibit detection service. Checks 2 pins and sets the inhibit state 
 # based on the quantity of pins set to inhibit state. 
@@ -36,6 +35,9 @@ class Check_Inhibit(smach.State):
 
     def execute(self, userdata):
         ret = inhibit_detect()
+
+        #self.p0 = False
+        #self.p1 = False
 
         self.p0 = ret.inhibit_0_status
         self.p1 = ret.inhibit_1_status

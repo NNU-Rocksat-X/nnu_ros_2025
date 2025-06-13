@@ -6,8 +6,8 @@ import rospy
 from daedalus_msgs.msg import inhibit_detection
 
 POLL_FREQ = 10.0 # freq in hz
-INHIBIT_PIN_0 = 5
-INHIBIT_PIN_1 = 6
+INHIBIT_PIN_0 = 11
+INHIBIT_PIN_1 = 13
 
 
 GPIO.setmode(GPIO.BCM)
