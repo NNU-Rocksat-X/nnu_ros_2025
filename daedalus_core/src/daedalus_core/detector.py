@@ -44,8 +44,9 @@ class Detector:
     def cleanup(self):
         GPIO.cleanup()
 
+
 if __name__ == "__main__":
-    p1 = Detector(pin_numer=5, persistence_threshold=20)
+    p1 = Detector(pin_number=5, persistence_threshold=20)
 
     pub = rospy.Publisher("inhibit_detection", inhibit_detection, queue_size=1)
 

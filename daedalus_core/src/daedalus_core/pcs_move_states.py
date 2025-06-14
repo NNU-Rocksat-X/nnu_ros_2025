@@ -95,6 +95,48 @@ with fold_sm:
             smach.StateMachine.add(delay_str, Wait_State(3),
                     transitions={'Complete': 'step_' + str(i - 1)})
 
-# TODO: Add more state machines for how the depth camera will dynamically 
-#       control the arm asyncronously. Ignore if that part of the project is
-#       not being developed this year. 
+
+poses_sm = smach.StateMachine(outcomes=['Success', 'Fail'])
+NUM_POSE_STEPS = len(rospy.get_param('pose'))
+with poses_sm:
+    for i in range(0, NUM_POSE_STEPS):
+        step_str = 'step_' + str(i)
+        delay_str = 'delay_' + str(i)
+
+
+        if i == NUM_FOLDING_STEPS - 1:
+            smach.StateMachine.add(step_str, Joint_Pose_State('pose/' + step_str, allowed_attempts=1),
+                    transitions={'Success': 'Success',
+                                 'Fail': 'Fail'})
+
+        else:
+            rospy.loginfo(i)
+            smach.StateMachine.add(step_str, Joint_Pose_State('pose/' + step_str, allowed_attempts=1),
+                    transitions={'Success': delay_str,
+                                 'Fail': 'Fail'})
+            
+            smach.StateMachine.add(delay_str, Wait_State(3),
+                                   transitions={'Complete': 'step_' + str(i + 1)})
+
+
+ejector_sm = smach.StateMachine(outcomes=['Success', 'Fail'])
+NUM_EJECT_STEPS = len(rospy.get_param('ejector'))
+with ejector_sm:
+    for i in range(0, NUM_EJECT_STEPS):
+        step_str = 'step_' + str(i)
+        delay_str = 'delay_' + str(i)
+
+
+        if i == NUM_FOLDING_STEPS - 1:
+            smach.StateMachine.add(step_str, Joint_Pose_State('ejector/' + step_str, allowed_attempts=1),
+                    transitions={'Success': 'Success',
+                                 'Fail': 'Fail'})
+
+        else:
+            rospy.loginfo(i)
+            smach.StateMachine.add(step_str, Joint_Pose_State('ejector/' + step_str, allowed_attempts=1),
+                    transitions={'Success': delay_str,
+                                 'Fail': 'Fail'})
+            
+            smach.StateMachine.add(delay_str, Wait_State(3),
+                                   transitions={'Complete': 'step_' + str(i + 1)})
