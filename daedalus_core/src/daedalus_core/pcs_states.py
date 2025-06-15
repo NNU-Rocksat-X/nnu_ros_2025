@@ -18,8 +18,8 @@ import Jetson.GPIO as GPIO
 from daedalus_core.daedalus_services.services import *
 
 # UNUSED
-# INHIBIT_PIN_0 = 11
-# INHIBIT_PIN_1 = 13
+INHIBIT_PIN_0 = 11
+INHIBIT_PIN_1 = 13
 START_SIGNAL_PIN = 15
 
 ##
@@ -32,32 +32,27 @@ class Check_Inhibit(smach.State):
     def __init__(self):
         self.p0 = False
         self.p1 = False
+        GPIO.setmode(GPIO.BOARD) 
+        GPIO.setup(INHIBIT_PIN_0, GPIO.IN)
+        GPIO.setup(INHIBIT_PIN_1, GPIO.IN)
+
         smach.State.__init__(self, outcomes=['full_inhibit', 'partial_inhibit', 'no_inhibit'])
                 
 
     def execute(self, userdata):
-        ret = inhibit_detect()
+        # ret = inhibit_detect()
 
-        #self.p0 = False
-        #self.p1 = False
+        for i in range(0, 10):
+            self.p0 = GPIO.input(INHIBIT_PIN_0)
+            rospy.sleep(0.05)
+            if self.p0 == False:
+                break
 
-        # TODO: if this does not work, lets just do a quick poll instead of this
-        #       overly complex service thing...
-        # steps are: 
-        # init gpio into the correct mode (input)
-        # wait a few ms or like a second if time isnt an issue
-        # check if its high or low
-        # wait a few ms
-        # check again
-        # if its still high, return inhibited (or not depending on your electrical system)
-        # if its not still high, its not actually inhibited and the first reading was a false positive
-        # 
-        # so boom there you go. This should be a super quick exit strategy for if
-        # the legacy code does not work.
-
-
-        self.p0 = ret.inhibit_0_status
-        self.p1 = ret.inhibit_1_status
+        for i in range(0, 10):
+            self.p1 = GPIO.input(INHIBIT_PIN_1)
+            rospy.sleep(0.05)
+            if self.p0 == False:
+                break
 
         if self.p0 and self.p1:
             return 'full_inhibit'
