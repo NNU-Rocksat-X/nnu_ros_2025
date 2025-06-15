@@ -27,7 +27,7 @@ from daedalus_msgs.srv import inhibit_detection, inhibit_detectionResponse
 POLL_FREQ = 10.0 # freq in hz
 INHIBIT_PIN_0 = 11
 INHIBIT_PIN_1 = 13
-START_SIGNAL_PIN = 123456 # TODO: change this
+#START_SIGNAL_PIN = 123456 # TODO: change this
 DEBOUNCE_CYCLES = 20
 
 
@@ -144,7 +144,7 @@ if __name__ == '__main__':
     rospy.init_node('detector')
 
     # TODO: Elias which mode are you using for pin numbering???
-    if init_gpio(mode='bcm') == False:
+    if init_gpio(mode='board') == False:
         rospy.logerr("Detector Node failed")   
     else:
         rospy.loginfo("the detector node has been started")

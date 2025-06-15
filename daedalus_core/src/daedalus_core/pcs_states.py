@@ -74,7 +74,7 @@ class Check_Signal(smach.State):
     def __init__(self):
         self.start = False
 
-        GPIO.setmode(GPIO.BCM) #TODO: Elias set board pin numbering mode
+        GPIO.setmode(GPIO.BOARD) #TODO: Elias set board pin numbering mode
         GPIO.setup(START_SIGNAL_PIN, GPIO.IN)
 
         smach.State.__init__(self, outcomes=['start_mission', 'not_yet'])
@@ -84,10 +84,41 @@ class Check_Signal(smach.State):
         self.start = GPIO.input(START_SIGNAL_PIN)
 
         if self.start == 1:
+            print("Passed Mission Check 1")
             rospy.sleep(0.1)
             self.start = GPIO.input(START_SIGNAL_PIN)
+
+            if self.start == 1:
+                print("Passed Mission Check 2")
+                rospy.sleep(0.1)
+                self.start = GPIO.input(START_SIGNAL_PIN)
+
+                if self.start == 1:
+                    print("Passed Mission Check 3")
+                    rospy.sleep(0.1)
+                    self.start = GPIO.input(START_SIGNAL_PIN)
+
+                    if self.start == 1:
+                        print("Passed Mission Check 4")
+                        rospy.sleep(0.1)
+                        self.start = GPIO.input(START_SIGNAL_PIN)
+                        if self.start == 1:
+                            print("Passed Mission Check 5")
+                            rospy.sleep(0.1)
+                            self.start = GPIO.input(START_SIGNAL_PIN)
+
+                        else:
+                            pass
+
+                    else:
+                        pass
+                else:
+                    pass
+            else:
+                pass
         else:
             pass
+
 
         if self.start:
             return 'start_mission'

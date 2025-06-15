@@ -36,7 +36,7 @@ class Mission_SM:
             
             smach.StateMachine.add('ejector_sm',
                                    ejector_sm,
-                                   transitions={'Complete': 'Mission_Success',
+                                   transitions={'Success': 'Mission_Success',
                                                 'Fail': 'Mission_Fail'})
 
             smach.StateMachine.add('wait_0', 
