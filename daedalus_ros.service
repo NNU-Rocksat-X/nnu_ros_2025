@@ -1,0 +1,29 @@
+# This is the systemd service file for the Daedalus IV mission
+#
+# - This file needs to be placed in /etc/systemd/system:
+#       sudo cp daedalus_ros.service /etc/systemd/system
+#
+# - Reload systemd to pick up the new service:
+#       sudo systemctl daemon-reload
+#
+# - Enable the service to launch on boot:
+#       sudo systemctl enable daedalus_ros.service
+#
+# - The service can be started and stopped using:
+#       sudo systemctl start daedalus_ros.service
+#       sudo systemctl stop daedalus_ros.service
+
+[Unit]
+Description=Daedalus ROS... Rising from the ashes...
+After=network.target
+
+[Service]
+Type=simple
+User=<TODO: Elias put username here>
+ExecStart=/home/<TODO: and here>/catkin_ws/src/nnu_ros_2025/launch_ros.sh
+WorkingDirectory=/home/<TODO: and here>/catkin_ws
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
