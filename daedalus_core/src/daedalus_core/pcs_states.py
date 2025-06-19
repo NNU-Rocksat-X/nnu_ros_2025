@@ -51,7 +51,7 @@ class Check_Inhibit(smach.State):
         for i in range(0, 10):
             self.p1 = GPIO.input(INHIBIT_PIN_1)
             rospy.sleep(0.05)
-            if self.p0 == False:
+            if self.p1 == False:
                 break
 
         if self.p0 and self.p1:
@@ -78,41 +78,11 @@ class Check_Signal(smach.State):
     def execute(self, userdata):
         self.start = GPIO.input(START_SIGNAL_PIN)
 
-        if self.start == 1:
-            print("Passed Mission Check 1")
-            rospy.sleep(0.1)
-            self.start = GPIO.input(START_SIGNAL_PIN)
-
-            if self.start == 1:
-                print("Passed Mission Check 2")
-                rospy.sleep(0.1)
-                self.start = GPIO.input(START_SIGNAL_PIN)
-
-                if self.start == 1:
-                    print("Passed Mission Check 3")
-                    rospy.sleep(0.1)
-                    self.start = GPIO.input(START_SIGNAL_PIN)
-
-                    if self.start == 1:
-                        print("Passed Mission Check 4")
-                        rospy.sleep(0.1)
-                        self.start = GPIO.input(START_SIGNAL_PIN)
-                        if self.start == 1:
-                            print("Passed Mission Check 5")
-                            rospy.sleep(0.1)
-                            self.start = GPIO.input(START_SIGNAL_PIN)
-
-                        else:
-                            pass
-
-                    else:
-                        pass
-                else:
-                    pass
-            else:
-                pass
-        else:
-            pass
+        for i in range(0, 100):
+            self.p0 = GPIO.input(START_SIGNAL_PIN)
+            rospy.sleep(0.01)
+            if self.p0 == False:
+                break
 
 
         if self.start:

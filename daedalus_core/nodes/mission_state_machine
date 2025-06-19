@@ -27,18 +27,6 @@ class Mission_SM:
     def mission_sm(self):
         with self.sm:
 
-
-            smach.StateMachine.add('inhibit_detect',
-                                   Check_Inhibit(),
-                                   transitions={'full_inhibit': 'Mission_Success',
-                                                'partial_inhibit': 'ejector_sm',
-                                                'no_inhibit': 'wait_0'})
-            
-            smach.StateMachine.add('ejector_sm',
-                                   ejector_sm,
-                                   transitions={'Success': 'Mission_Success',
-                                                'Fail': 'Mission_Fail'})
-
             smach.StateMachine.add('wait_0', 
                                    Wait_State(1),
                                    transitions={'Complete': 'wait_for_start_mission_signal'}) 
@@ -50,6 +38,48 @@ class Mission_SM:
             
             smach.StateMachine.add('wait_00', 
                                    Wait_State(1),
+                                   transitions={'Complete': 'inhibit_detect'}) 
+
+            smach.StateMachine.add('inhibit_detect',
+                                   Check_Inhibit(),
+                                   transitions={'full_inhibit': 'Mission_Success',
+                                                'partial_inhibit': 'ejector_sm',
+                                                'no_inhibit': 'wait_000'})
+            
+            smach.StateMachine.add('ejector_sm',
+                                   ejector_sm,
+                                   transitions={'Success': 'wait_ej_1',
+                                                'Fail': 'Mission_Fail'})
+
+            smach.StateMachine.add('wait_ej_1', 
+                                   Wait_State(25),
+                                   transitions={'Complete': 'ejector_sm_two'}) 
+
+            smach.StateMachine.add('ejector_sm_two',
+                                   ejector_sm_two,
+                                   transitions={'Success': 'wait_ej_2',
+                                                'Fail': 'Mission_Fail'})
+
+            smach.StateMachine.add('wait_ej_2', 
+                                   Wait_State(5),
+                                   transitions={'Complete': 'ejector_sm_three'}) 
+
+            smach.StateMachine.add('ejector_sm_three',
+                                   ejector_sm_three,
+                                   transitions={'Success': 'wait_ej_3',
+                                                'Fail': 'Mission_Fail'})
+
+            smach.StateMachine.add('wait_ej_3', 
+                                   Wait_State(5),
+                                   transitions={'Complete': 'ejector_sm_four'}) 
+
+            smach.StateMachine.add('ejector_sm_four',
+                                   ejector_sm_four,
+                                   transitions={'Success': 'Mission_Success',
+                                                'Fail': 'Mission_Fail'})
+
+            smach.StateMachine.add('wait_000', 
+                                   Wait_State(10),
                                    transitions={'Complete': 'unfold'}) 
 
             smach.StateMachine.add('unfold', 
